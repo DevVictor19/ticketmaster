@@ -1,0 +1,14 @@
+services:
+  database:
+    image: postgres:18.3
+    environment:
+      POSTGRES_USER: main
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: event-management
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql
+
+volumes:
+  db_data:
