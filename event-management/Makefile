@@ -12,3 +12,7 @@ migrate-down:
 migrate-status:
 	goose status
 
+.PHONY: run-dev 
+
+run-dev:
+	air
