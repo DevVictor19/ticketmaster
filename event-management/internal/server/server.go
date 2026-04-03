@@ -19,6 +19,8 @@ import (
 func Start() {
 	cfg := loadConfig()
 	db := connectDB(cfg.Postgres)
+	rdb := getRedisClient(cfg.Redis)
+	defer rdb.Close()
 
 	e := echo.New()
 	e.Use(middleware.RequestLogger())

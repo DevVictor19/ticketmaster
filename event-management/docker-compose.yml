@@ -10,12 +10,18 @@ services:
     volumes:
       - db_data:/var/lib/postgresql
 
+  redis:
+    image: redis:8.6.2
+    ports:
+      - "6379:6379"
+
   api:
     build: .
     ports:
       - "8080:8080"
     depends_on:
       - database
+      - redis
     environment:
       POSTGRES_HOST: database
       POSTGRES_PORT: 5432

@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Postgres *Postgres
 	Server   *Server
+	Redis    *Redis
 }
 
 type Postgres struct {
@@ -41,6 +42,12 @@ type Server struct {
 	CtxTimeout     time.Duration
 }
 
+type Redis struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
 func loadConfig() *Config {
 	return &Config{
 		Postgres: &Postgres{
@@ -63,6 +70,11 @@ func loadConfig() *Config {
 			WriteTimeout:   time.Duration(getInt("SERVER_WRITE_TIMEOUT")) * time.Second,
 			MaxHeaderBytes: getInt("SERVER_MAX_HEADER_BYTES"),
 			CtxTimeout:     time.Duration(getInt("SERVER_CTX_TIMEOUT")) * time.Second,
+		},
+		Redis: &Redis{
+			Addr:     getString("REDIS_ADDR"),
+			Password: getString("REDIS_PASSWORD"),
+			DB:       getInt("REDIS_DB"),
 		},
 	}
 }
