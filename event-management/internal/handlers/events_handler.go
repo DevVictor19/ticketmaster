@@ -25,9 +25,9 @@ func (h *EventsHandler) FindByUUID(c *echo.Context) error {
 	event, err := h.findEventByUuidUC.Execute(c.Request().Context(), uuid)
 	if err != nil {
 		if errors.Is(err, repositories.ErrNotFound) {
-			return c.JSON(404, utils.ErrorResponse("Event not found"))
+			return c.JSON(404, utils.ErrorResponse(err, "Event not found"))
 		}
-		return c.JSON(500, utils.ErrorResponse("Internal server error"))
+		return c.JSON(500, utils.ErrorResponse(err, "Internal server error"))
 	}
 	return c.JSON(200, dtos.ToEventDTO(event))
 }
