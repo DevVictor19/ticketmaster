@@ -70,7 +70,7 @@ func loadConfig() *Config {
 func getString(key string) string {
 	val, ok := os.LookupEnv(key)
 	if !ok {
-		log.Fatalf("missing %s on .env file\n", key)
+		log.Fatalf("missing %s env\n", key)
 	}
 
 	return val
@@ -79,7 +79,7 @@ func getString(key string) string {
 func getInt(key string) int {
 	val, ok := os.LookupEnv(key)
 	if !ok {
-		log.Fatalf("missing %s on .env file\n", key)
+		log.Fatalf("missing %s env\n", key)
 	}
 
 	valAsInt, err := strconv.Atoi(val)
