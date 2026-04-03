@@ -11,6 +11,7 @@ import (
 
 	"github.com/DevVictor19/event/internal/handlers"
 	"github.com/DevVictor19/event/internal/repositories"
+	"github.com/DevVictor19/event/internal/services"
 	"github.com/DevVictor19/event/internal/usecases"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -25,8 +26,9 @@ func Start() {
 	e := echo.New()
 	e.Use(middleware.RequestLogger())
 
-	eventRepository := repositories.NewEventRepository(db)
-	findEventByUuidUC := usecases.NewFindEventByUuidUC(eventRepository)
+	eventRepo := repositories.NewEventRepository(db)
+	eventCacheSvc := services.NewEventCacheService(rdb)
+	findEventByUuidUC := usecases.NewFindEventByUuidUC(eventRepo, eventCacheSvc)
 	eventsHandler := handlers.NewEventsHandler(findEventByUuidUC)
 
 	api := e.Group("/api/v1/management/events")
