@@ -23,7 +23,7 @@ func NewEventRepository(db *gorm.DB) EventRepository {
 
 func (r *eventRepository) FindByUUID(ctx context.Context, uuid string) (*entities.Event, error) {
 	entity, err := gorm.G[entities.Event](r.db).
-		Where("id = ?", uuid).
+		Where("uuid = ?", uuid).
 		Preload("Venue", nil).
 		Preload("Performers", nil).
 		Preload("Tickets", nil).
