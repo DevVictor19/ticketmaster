@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -45,6 +46,9 @@ func (r *baseRepository[T]) DeleteByUUID(ctx context.Context, uuid string) error
 func (r *baseRepository[T]) FindByID(ctx context.Context, id uint) (*T, error) {
 	entity, err := gorm.G[T](r.db).Where("id = ?", id).First(ctx)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 	return &entity, nil
@@ -53,6 +57,9 @@ func (r *baseRepository[T]) FindByID(ctx context.Context, id uint) (*T, error) {
 func (r *baseRepository[T]) FindByUUID(ctx context.Context, uuid string) (*T, error) {
 	entity, err := gorm.G[T](r.db).Where("uuid = ?", uuid).First(ctx)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 	return &entity, nil
