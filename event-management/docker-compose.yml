@@ -10,5 +10,30 @@ services:
     volumes:
       - db_data:/var/lib/postgresql
 
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+    environment:
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: main
+      POSTGRES_PASSWORD: password
+      POSTGRES_DBNAME: event-management
+      POSTGRES_SSLMODE: disable
+      POSTGRES_TIMEZONE: UTC
+      POSTGRES_MAX_OPEN_CONNS: 25
+      POSTGRES_CONN_MAX_LIFETIME: 300
+      POSTGRES_MAX_IDLE_CONNS: 10
+      POSTGRES_CONN_MAX_IDLE_TIME: 60
+      SERVER_MODE: development
+      SERVER_ADDR: ":8080"
+      SERVER_READ_TIMEOUT: 10
+      SERVER_WRITE_TIMEOUT: 10
+      SERVER_MAX_HEADER_BYTES: 1048576
+      SERVER_CTX_TIMEOUT: 30
+
 volumes:
   db_data:
