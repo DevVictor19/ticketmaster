@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/DevVictor19/event/internal/entities"
@@ -34,14 +35,20 @@ func (s *eventCacheService) SetByUUID(ctx context.Context, event *entities.Event
 }
 
 func (s *eventCacheService) GetByUUID(ctx context.Context, uuid string) (*entities.Event, error) {
-	var event entities.Event
-	err := s.rdb.Get(ctx, s.getKey(uuid)).Scan(&event)
+	data, err := s.rdb.Get(ctx, s.getKey(uuid)).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil
 		}
 		return nil, err
 	}
+
+	var event entities.Event
+	err = json.Unmarshal(data, &event)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event from cache: %w", err)
+	}
+
 	return &event, nil
 }
 
