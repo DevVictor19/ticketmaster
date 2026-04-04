@@ -9,25 +9,31 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/DevVictor19/booking/internal/handlers"
+	"github.com/DevVictor19/booking/internal/repositories"
+	"github.com/DevVictor19/booking/internal/services"
+	"github.com/DevVictor19/booking/internal/usecases"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 )
 
 func Start() {
 	cfg := loadConfig()
-	// db := connectDB(cfg.Postgres)
+	db := connectDB(cfg.Postgres)
 	rdb := getRedisClient(cfg.Redis)
 	defer rdb.Close()
 
 	e := echo.New()
 	e.Use(middleware.RequestLogger())
 
-	//eventRepo := repositories.NewEventRepository(db)
+	ticketRepo := repositories.NewTicketRepository(db)
+	ticketLockSvc := services.NewTicketLockService(rdb)
+	reserveTicketUC := usecases.NewReserveTicketUseCase(ticketRepo, ticketLockSvc)
+	ticketsHandler := handlers.NewTicketsHandler(reserveTicketUC)
 
 	api := e.Group("/api/v1/booking")
-	api.GET("/health", func(c *echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
+	ticketsApi := api.Group("/tickets")
+	ticketsApi.POST("/reserve", ticketsHandler.ReserveTicket)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
