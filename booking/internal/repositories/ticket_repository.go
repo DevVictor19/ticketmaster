@@ -10,6 +10,7 @@ import (
 type TicketRepository interface {
 	repository[entities.Ticket]
 	CheckAvailability(ctx context.Context, uuid string) (bool, error)
+	UpdateStatus(ctx context.Context, uuid string, status entities.TicketStatus) error
 }
 
 type ticketRepository struct {
@@ -32,4 +33,11 @@ func (r *ticketRepository) CheckAvailability(ctx context.Context, uuid string) (
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *ticketRepository) UpdateStatus(ctx context.Context, uuid string, status entities.TicketStatus) error {
+	return r.db.WithContext(ctx).
+		Model(&entities.Ticket{}).
+		Where("uuid = ?", uuid).
+		Update("status", status).Error
 }
