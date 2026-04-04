@@ -14,4 +14,5 @@ type TicketStatus string
 const (
 	TicketStatusAvailable TicketStatus = "available"
 	TicketStatusSold      TicketStatus = "booked"
+	TicketStatusReserved  TicketStatus = "reserved"
 )
