@@ -47,5 +47,7 @@ func (uc *ReserveTicketUseCase) Execute(ctx context.Context, input ReserveTicket
 		return err
 	}
 
+	// TODO: publish event on Kafka to notify other services about the reservation
+
 	return nil
 }
