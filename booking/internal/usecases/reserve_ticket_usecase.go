@@ -39,7 +39,7 @@ func (uc *ReserveTicketUseCase) Execute(ctx context.Context, input ReserveTicket
 		return ErrTicketNotAvailable
 	}
 
-	err = uc.ticketLockSvc.ReserveTicket(ctx, input.TicketUUID, input.UserUUID)
+	err = uc.ticketLockSvc.Reserve(ctx, input.TicketUUID, input.UserUUID)
 	if err != nil {
 		if errors.Is(err, services.ErrTicketAlreadyReserved) {
 			return ErrTicketNotAvailable

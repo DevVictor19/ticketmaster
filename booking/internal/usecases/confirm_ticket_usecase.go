@@ -33,7 +33,7 @@ type ConfirmTicketInput struct {
 }
 
 func (uc *ConfirmTicketUseCase) Execute(ctx context.Context, input ConfirmTicketInput) error {
-	isReserved, err := uc.ticketLockSvc.CheckTicketReservation(ctx, input.TicketUUID, input.UserUUID)
+	isReserved, err := uc.ticketLockSvc.CheckReservation(ctx, input.TicketUUID, input.UserUUID)
 	if err != nil {
 		return err
 	}
