@@ -31,8 +31,9 @@ func Start() {
 	findEventByUuidUC := usecases.NewFindEventByUuidUC(eventRepo, eventCacheSvc)
 	eventsHandler := handlers.NewEventsHandler(findEventByUuidUC)
 
-	api := e.Group("/api/v1/management/events")
-	api.GET("/:uuid", eventsHandler.FindByUUID)
+	api := e.Group("/api/v1/management")
+	eventsApi := api.Group("/events")
+	eventsApi.GET("/:uuid", eventsHandler.FindByUUID)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
