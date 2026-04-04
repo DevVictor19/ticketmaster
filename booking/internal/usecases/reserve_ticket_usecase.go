@@ -31,7 +31,7 @@ type ReserveTicketInput struct {
 }
 
 func (uc *ReserveTicketUseCase) Execute(ctx context.Context, input ReserveTicketInput) error {
-	isAvailable, err := uc.ticketRepo.CheckTicketAvailability(ctx, input.TicketUUID)
+	isAvailable, err := uc.ticketRepo.CheckAvailability(ctx, input.TicketUUID)
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,7 @@ import (
 
 type TicketRepository interface {
 	repository[entities.Ticket]
-	CheckTicketAvailability(ctx context.Context, uuid string) (bool, error)
+	CheckAvailability(ctx context.Context, uuid string) (bool, error)
 }
 
 type ticketRepository struct {
@@ -22,7 +22,7 @@ func NewTicketRepository(db *gorm.DB) TicketRepository {
 	}
 }
 
-func (r *ticketRepository) CheckTicketAvailability(ctx context.Context, uuid string) (bool, error) {
+func (r *ticketRepository) CheckAvailability(ctx context.Context, uuid string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
 		Model(&entities.Ticket{}).
