@@ -25,7 +25,10 @@ func NewFindEventByUuidUC(
 
 func (uc *FindEventByUuidUC) Execute(ctx context.Context, uuid string) (*entities.Event, error) {
 	cached, err := uc.eventCacheSvc.GetByUUID(ctx, uuid)
-	if err == nil && cached != nil {
+	if err != nil {
+		return nil, err
+	}
+	if cached != nil {
 		return cached, nil
 	}
 
