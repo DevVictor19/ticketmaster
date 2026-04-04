@@ -1,5 +1,5 @@
 services:
-  database:
+  event-management-db:
     image: postgres:18.3
     environment:
       POSTGRES_USER: main
@@ -15,15 +15,16 @@ services:
     ports:
       - "6379:6379"
 
-  api:
-    build: .
+  event-management-api:
+    build:
+      context: ./event-management/
     ports:
       - "8080:8080"
     depends_on:
-      - database
+      - event-management-db
       - redis
     environment:
-      POSTGRES_HOST: database
+      POSTGRES_HOST: event-management-db
       POSTGRES_PORT: 5432
       POSTGRES_USER: main
       POSTGRES_PASSWORD: password
@@ -40,6 +41,9 @@ services:
       SERVER_WRITE_TIMEOUT: 10
       SERVER_MAX_HEADER_BYTES: 1048576
       SERVER_CTX_TIMEOUT: 30
+      REDIS_ADDR: localhost:6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
 
 volumes:
   db_data:
