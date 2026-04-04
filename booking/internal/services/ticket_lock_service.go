@@ -13,6 +13,7 @@ var ErrTicketAlreadyReserved = errors.New("ticket is already reserved")
 type TicketLockService interface {
 	// ReserveTicket attempts to reserve a ticket by its UUID. If the ticket is successfully reserved, it will be locked for the specified TTL duration.
 	ReserveTicket(ctx context.Context, ticketUUID string, userUUID string) error
+	CheckTicketReservation(ctx context.Context, ticketUUID string, userUUID string) (bool, error)
 }
 
 type ticketLockService struct {
@@ -51,6 +52,22 @@ func (s *ticketLockService) ReserveTicket(
 	}
 
 	return nil
+}
+
+func (s *ticketLockService) CheckTicketReservation(
+	ctx context.Context,
+	ticketUUID string,
+	userUUID string) (bool, error) {
+
+	val, err := s.rdb.Get(ctx, s.getUserLockKey(ticketUUID, userUUID)).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return val == "true", nil
 }
 
 func (s *ticketLockService) getLockKey(ticketUUID string) string {
