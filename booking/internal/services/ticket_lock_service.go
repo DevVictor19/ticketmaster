@@ -25,7 +25,11 @@ func NewTicketLockService(rdb *redis.Client) TicketLockService {
 	}
 }
 
-func (s *ticketLockService) ReserveTicket(ctx context.Context, ticketUUID string, userUUID string) error {
+func (s *ticketLockService) ReserveTicket(
+	ctx context.Context, 
+	ticketUUID string, 
+	userUUID string) error {
+
 	lockTTL := time.Minute * 15
 
 	pipe := s.rdb.Pipeline()
