@@ -29,11 +29,13 @@ func Start() {
 	ticketRepo := repositories.NewTicketRepository(db)
 	ticketLockSvc := services.NewTicketLockService(rdb)
 	reserveTicketUC := usecases.NewReserveTicketUseCase(ticketRepo, ticketLockSvc)
-	ticketsHandler := handlers.NewTicketsHandler(reserveTicketUC)
+	confirmTicketUC := usecases.NewConfirmTicketUseCase(ticketRepo, ticketLockSvc)
+	ticketsHandler := handlers.NewTicketsHandler(reserveTicketUC, confirmTicketUC)
 
 	api := e.Group("/api/v1/booking")
 	ticketsApi := api.Group("/tickets")
 	ticketsApi.POST("/reserve", ticketsHandler.ReserveTicket)
+	ticketsApi.POST("/confirm", ticketsHandler.ConfirmTicket)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

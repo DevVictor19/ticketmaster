@@ -4,3 +4,9 @@ type ReserveTicketRequest struct {
 	TicketUUID string `json:"ticket_uuid" validate:"required,uuid4"`
 	UserUUID   string `json:"user_uuid" validate:"required,uuid4"`
 }
+
+type ConfirmTicketRequest struct {
+	TicketUUID        string `json:"ticket_uuid" validate:"required,uuid4"`
+	UserUUID          string `json:"user_uuid" validate:"required,uuid4"`
+	PaymentMethodUUID string `json:"payment_method_uuid" validate:"required,uuid4"`
+}
