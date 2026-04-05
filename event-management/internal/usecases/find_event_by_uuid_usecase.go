@@ -51,7 +51,7 @@ func (uc *FindEventByUuidUC) Execute(ctx context.Context, uuid string) (*entitie
 		event = dbEvent
 	}
 
-	reservations, err := uc.ticketLockSvc.GetReservations(ctx, event.GetTicketUUIDs())
+	reservations, err := uc.ticketLockSvc.CheckReservations(ctx, event.GetTicketUUIDs())
 	if err != nil {
 		return nil, err
 	}

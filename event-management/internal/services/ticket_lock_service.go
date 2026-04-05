@@ -9,7 +9,7 @@ import (
 
 type TicketLockService interface {
 	// GetReservations returns a slice of booleans indicating whether each ticket UUID is reserved (true) or not (false).
-	GetReservations(ctx context.Context, ticketUUIDs []string) ([]bool, error)
+	CheckReservations(ctx context.Context, ticketUUIDs []string) ([]bool, error)
 }
 
 type ticketLockService struct {
@@ -22,7 +22,7 @@ func NewTicketLockService(rdb *redis.Client) TicketLockService {
 	}
 }
 
-func (s *ticketLockService) GetReservations(ctx context.Context, ticketUUIDs []string) ([]bool, error) {
+func (s *ticketLockService) CheckReservations(ctx context.Context, ticketUUIDs []string) ([]bool, error) {
 	keys := make([]string, len(ticketUUIDs))
 	for i, uuid := range ticketUUIDs {
 		keys[i] = s.getLockKey(uuid)
