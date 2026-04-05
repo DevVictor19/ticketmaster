@@ -37,19 +37,19 @@ func (uc *FindEventByUuidUC) Execute(ctx context.Context, uuid string) (*entitie
 
 	if cachedEv != nil {
 		event = cachedEv
-	}
+	} else {
+		dbEvent, err := uc.eventRepo.FindByUUID(ctx, uuid)
+		if err != nil {
+			return nil, err
+		}
 
-	dbEvent, err := uc.eventRepo.FindByUUID(ctx, uuid)
-	if err != nil {
-		return nil, err
-	}
+		err = uc.eventCacheSvc.SetByUUID(ctx, dbEvent)
+		if err != nil {
+			return nil, err
+		}
 
-	err = uc.eventCacheSvc.SetByUUID(ctx, dbEvent)
-	if err != nil {
-		return nil, err
+		event = dbEvent
 	}
-
-	event = dbEvent
 
 	reservations, err := uc.ticketLockSvc.GetReservations(ctx, event.GetTicketUUIDs())
 	if err != nil {
