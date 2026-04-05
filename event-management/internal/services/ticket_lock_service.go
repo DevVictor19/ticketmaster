@@ -8,7 +8,7 @@ import (
 )
 
 type TicketLockService interface {
-	// GetReservations returns a slice of booleans indicating whether each ticket UUID is reserved (true) or not (false).
+	// Returns a slice of booleans indicating whether each ticket UUID is reserved (true) or not (false).
 	CheckReservations(ctx context.Context, ticketUUIDs []string) ([]bool, error)
 }
 
