@@ -75,5 +75,5 @@ func (s *ticketLockService) getLockKey(ticketUUID string) string {
 }
 
 func (s *ticketLockService) getUserLockKey(ticketUUID string, userUUID string) string {
-	return "ticket_lock_user" + ticketUUID + ":" + userUUID
+	return "ticket_lock_user:" + ticketUUID + ":" + userUUID
 }
