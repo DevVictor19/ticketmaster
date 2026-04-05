@@ -29,6 +29,9 @@ func (r *eventRepository) FindByUUID(ctx context.Context, uuid string) (*entitie
 		Preload("Tickets", nil).
 		First(ctx)
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 	return &entity, nil
