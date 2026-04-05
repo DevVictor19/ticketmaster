@@ -21,7 +21,7 @@ func (e *Event) GetTicketUUIDs() []string {
 	return uuids
 }
 
-func (e *Event) UpdateReservedTickets(reservations []bool) {
+func (e *Event) UpdateReservationStatus(reservations []bool) {
 	for i, reserved := range reservations {
 		if reserved {
 			e.Tickets[i].Status = TicketStatusReserved

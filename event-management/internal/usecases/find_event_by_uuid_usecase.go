@@ -56,7 +56,7 @@ func (uc *FindEventByUuidUC) Execute(ctx context.Context, uuid string) (*entitie
 		return nil, err
 	}
 
-	event.UpdateReservedTickets(reservations)
+	event.UpdateReservationStatus(reservations)
 
 	return event, nil
 }
