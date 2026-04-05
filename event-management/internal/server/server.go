@@ -28,7 +28,8 @@ func Start() {
 
 	eventRepo := repositories.NewEventRepository(db)
 	eventCacheSvc := services.NewEventCacheService(rdb)
-	findEventByUuidUC := usecases.NewFindEventByUuidUC(eventRepo, eventCacheSvc)
+	ticketLockSvc := services.NewTicketLockService(rdb)
+	findEventByUuidUC := usecases.NewFindEventByUuidUC(eventRepo, eventCacheSvc, ticketLockSvc)
 	eventsHandler := handlers.NewEventsHandler(findEventByUuidUC)
 
 	api := e.Group("/api/v1/management")

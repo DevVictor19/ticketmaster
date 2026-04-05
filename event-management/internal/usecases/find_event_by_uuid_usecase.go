@@ -11,36 +11,52 @@ import (
 type FindEventByUuidUC struct {
 	eventRepo     repositories.EventRepository
 	eventCacheSvc services.EventCacheService
+	ticketLockSvc services.TicketLockService
 }
 
 func NewFindEventByUuidUC(
 	eventRepo repositories.EventRepository,
-	eventCacheSvc services.EventCacheService) *FindEventByUuidUC {
+	eventCacheSvc services.EventCacheService,
+	ticketLockSvc services.TicketLockService,
+) *FindEventByUuidUC {
 
 	return &FindEventByUuidUC{
 		eventRepo:     eventRepo,
 		eventCacheSvc: eventCacheSvc,
+		ticketLockSvc: ticketLockSvc,
 	}
 }
 
 func (uc *FindEventByUuidUC) Execute(ctx context.Context, uuid string) (*entities.Event, error) {
-	cached, err := uc.eventCacheSvc.GetByUUID(ctx, uuid)
-	if err != nil {
-		return nil, err
-	}
-	if cached != nil {
-		return cached, nil
-	}
+	var event *entities.Event
 
-	event, err := uc.eventRepo.FindByUUID(ctx, uuid)
+	cachedEv, err := uc.eventCacheSvc.GetByUUID(ctx, uuid)
 	if err != nil {
 		return nil, err
 	}
 
-	err = uc.eventCacheSvc.SetByUUID(ctx, event)
+	if cachedEv != nil {
+		event = cachedEv
+	}
+
+	dbEvent, err := uc.eventRepo.FindByUUID(ctx, uuid)
 	if err != nil {
 		return nil, err
 	}
+
+	err = uc.eventCacheSvc.SetByUUID(ctx, dbEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	event = dbEvent
+
+	reservations, err := uc.ticketLockSvc.GetReservations(ctx, event.GetTicketUUIDs())
+	if err != nil {
+		return nil, err
+	}
+
+	event.UpdateReservedTickets(reservations)
 
 	return event, nil
 }
