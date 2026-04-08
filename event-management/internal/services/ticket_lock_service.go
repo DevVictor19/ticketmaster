@@ -34,7 +34,6 @@ func (s *ticketLockService) CheckReservations(ctx context.Context, ticketUUIDs [
 	}
 
 	reservations := make([]bool, len(results))
-	
 	for i, res := range results {
 		if res == nil {
 			reservations[i] = false
