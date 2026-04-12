@@ -1,0 +1,17 @@
+{
+  "name": "postgres-cdc",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "event-management-db",
+    "database.port": "5432",
+    "database.user": "main",
+    "database.password": "password",
+    "database.dbname": "event-management",
+    "topic.prefix": "pg",
+    "schema.include.list": "public",
+    "table.include.list": "public.event_performers,public.events,public.performers,public.tickets,public.venues",
+    "publication.autocreate.mode": "all_tables",
+    "include.schema.changes": "true",
+    "plugin.name": "pgoutput"
+  }
+}
