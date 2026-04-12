@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	Server *Server
+	Kafka  *Kafka
 }
 
 type Server struct {
@@ -20,6 +21,10 @@ type Server struct {
 	CtxTimeout     time.Duration
 }
 
+type Kafka struct {
+	Listeners string
+}
+
 func loadConfig() *Config {
 	return &Config{
 		Server: &Server{
@@ -29,6 +34,9 @@ func loadConfig() *Config {
 			WriteTimeout:   time.Duration(getInt("SERVER_WRITE_TIMEOUT")) * time.Second,
 			MaxHeaderBytes: getInt("SERVER_MAX_HEADER_BYTES"),
 			CtxTimeout:     time.Duration(getInt("SERVER_CTX_TIMEOUT")) * time.Second,
+		},
+		Kafka: &Kafka{
+			Listeners: getString("KAFKA_LISTENERS"),
 		},
 	}
 }

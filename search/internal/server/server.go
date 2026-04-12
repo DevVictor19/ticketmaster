@@ -9,12 +9,16 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/DevVictor19/search/internal/brokers/cdc"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 )
 
 func Start() {
 	cfg := loadConfig()
+
+	cdcConsumer := cdc.NewEventManagementDbConsumer(cfg.Kafka.Listeners)
+	go cdcConsumer.Start()
 
 	e := echo.New()
 	e.Use(middleware.RequestLogger())

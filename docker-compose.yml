@@ -127,6 +127,7 @@ services:
       SERVER_WRITE_TIMEOUT: 10
       SERVER_MAX_HEADER_BYTES: 1048576
       SERVER_CTX_TIMEOUT: 30
+      KAFKA_LISTENERS: broker:29092
 
 volumes:
   db_data:
