@@ -113,5 +113,20 @@ services:
       REDIS_PASSWORD: ""
       REDIS_DB: 0
 
+  search-api:
+    build:
+      context: ./search/
+    ports:
+      - "8082:8080"
+    depends_on:
+      - broker
+    environment:
+      SERVER_MODE: development
+      SERVER_ADDR: ":8080"
+      SERVER_READ_TIMEOUT: 10
+      SERVER_WRITE_TIMEOUT: 10
+      SERVER_MAX_HEADER_BYTES: 1048576
+      SERVER_CTX_TIMEOUT: 30
+
 volumes:
   db_data:
