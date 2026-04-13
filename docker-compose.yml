@@ -1,4 +1,16 @@
 services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-wolfi:9.3.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
   broker:
     image: apache/kafka:4.0.2
     container_name: kafka-broker
@@ -138,3 +150,4 @@ services:
 
 volumes:
   db_data:
+  es_data:
