@@ -12,6 +12,9 @@ export GOOSE_DRIVER GOOSE_DBSTRING GOOSE_MIGRATION_DIR
 up:
 	docker compose up -d
 
+up-components:
+	docker compose up -d elasticsearch broker event-management-db redis connect
+
 down:
 	docker compose down
 
