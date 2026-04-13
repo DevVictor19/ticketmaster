@@ -1,6 +1,7 @@
 services:
   broker:
     image: apache/kafka:4.0.2
+    container_name: kafka-broker
     hostname: broker
     ports:
       - 9092:9092
@@ -20,6 +21,7 @@ services:
 
   event-management-db:
     image: postgres:17.9
+    container_name: postgres-db
     environment:
       POSTGRES_USER: main
       POSTGRES_PASSWORD: password
@@ -32,6 +34,7 @@ services:
 
   connect:
     image: quay.io/debezium/connect:3.5
+    container_name: debezium-connect
     ports:
       - "8083:8083"
     depends_on:
@@ -50,12 +53,14 @@ services:
 
   redis:
     image: redis:8.6.2
+    container_name: redis
     ports:
       - "6379:6379"
 
   event-management-api:
     build:
       context: ./event-management/
+    contaienr_name: event-management-api
     ports:
       - "8080:8080"
     depends_on:
@@ -86,6 +91,7 @@ services:
   booking-api:
     build:
       context: ./booking/
+    container_name: booking-api
     ports:
       - "8081:8080"
     depends_on:
@@ -116,6 +122,7 @@ services:
   search-api:
     build:
       context: ./search/
+    container_name: search-api
     ports:
       - "8082:8080"
     depends_on:
