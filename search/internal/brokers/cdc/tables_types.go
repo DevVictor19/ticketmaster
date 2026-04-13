@@ -1,47 +1,56 @@
 package cdc
 
+import "time"
+
+type TicketStatus string
+
+const (
+	TicketStatusAvailable TicketStatus = "available"
+	TicketStatusBooked    TicketStatus = "booked"
+)
+
 type Ticket struct {
-	ID        int64  `json:"id"`
-	UUID      string `json:"uuid"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	EventID   int64  `json:"event_id"`
-	Price     int64  `json:"price"`
-	Seat      string `json:"seat"`
-	Status    string `json:"status"`
+	ID        uint         `json:"id"`
+	UUID      string       `json:"uuid"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	EventID   uint         `json:"event_id"`
+	Price     uint         `json:"price"`
+	Seat      string       `json:"seat"`
+	Status    TicketStatus `json:"status"`
 }
 
 type Event struct {
-	ID          int64  `json:"id"`
-	UUID        string `json:"uuid"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	EventDate   string `json:"event_date"`
-	VenueID     int64  `json:"venue_id"`
+	ID          uint      `json:"id"`
+	UUID        string    `json:"uuid"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description"`
+	Date        time.Time `json:"date"`
+	VenueID     uint      `json:"venue_id"`
 }
 
 type Venue struct {
-	ID        int64  `json:"id"`
-	UUID      string `json:"uuid"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	Name      string `json:"name"`
-	Location  string `json:"location"`
-	Capacity  int64  `json:"capacity"`
+	ID        uint            `json:"id"`
+	UUID      string          `json:"uuid"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+	Location  string          `json:"location"`
+	SeatMap   map[string]bool `json:"seat_map"`
 }
 
 type Performer struct {
-	ID        int64  `json:"id"`
-	UUID      string `json:"uuid"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	Name      string `json:"name"`
-	Genre     string `json:"genre"`
+	ID          uint      `json:"id"`
+	UUID        string    `json:"uuid"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Name        string    `json:"name"`
+	Age         uint      `json:"age"`
+	Description *string   `json:"description"`
 }
 
 type EventPerformer struct {
-	EventID     int64 `json:"event_id"`
-	PerformerID int64 `json:"performer_id"`
+	EventID     uint `json:"event_id"`
+	PerformerID uint `json:"performer_id"`
 }
