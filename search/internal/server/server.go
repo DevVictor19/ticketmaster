@@ -17,8 +17,11 @@ import (
 func Start() {
 	cfg := loadConfig()
 
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
 	cdcConsumer := cdc.NewEventManagementDbConsumer(cfg.Kafka.Listeners)
-	go cdcConsumer.Start()
+	cdcConsumer.Start(ctx)
 
 	e := echo.New()
 	e.Use(middleware.RequestLogger())
@@ -27,9 +30,6 @@ func Start() {
 	api.GET("/health", func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
-
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
 
 	sc := echo.StartConfig{
 		Address: cfg.Server.Addr,

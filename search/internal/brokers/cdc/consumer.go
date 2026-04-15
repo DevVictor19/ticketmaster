@@ -1,6 +1,7 @@
 package cdc
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -28,7 +29,7 @@ var (
 	eventPerformerTopic = "pg.public.event_performers"
 )
 
-func (ec *EventManagementDbConsumer) Start() {
+func (ec *EventManagementDbConsumer) Start(ctx context.Context) {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": ec.BootstrapServers,
 		"group.id":          "search-api",
@@ -48,18 +49,22 @@ func (ec *EventManagementDbConsumer) Start() {
 		log.Fatalf("Failed to subscribe consumer: %s", err)
 	}
 
-	run := true
-
-	for run {
-		msg, err := c.ReadMessage(time.Second)
-		if err == nil {
-			processMessage(msg)
-		} else if !err.(kafka.Error).IsTimeout() {
-			slog.Error("Consumer error", "error", err, "message", msg)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				c.Close()
+				return
+			default:
+				msg, err := c.ReadMessage(time.Second)
+				if err == nil {
+					processMessage(msg)
+				} else if !err.(kafka.Error).IsTimeout() {
+					slog.Error("Consumer error", "error", err, "message", msg)
+				}
+			}
 		}
-	}
-
-	c.Close()
+	}()
 }
 
 func processMessage(msg *kafka.Message) {
