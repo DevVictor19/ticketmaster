@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/DevVictor19/search/internal/brokers/cdc"
+	"github.com/DevVictor19/search/internal/repositories"
 	"github.com/DevVictor19/search/internal/services"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -19,11 +20,13 @@ import (
 func Start() {
 	cfg := loadConfig()
 	esClient := getEsClient(cfg.Elasticsearch)
+	db := connectDB(cfg.Postgres)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	searchEngineSvc := services.NewSearchEngineService(esClient)
+	venueRpo := repositories.NewVenueRepository(db)
+	searchEngineSvc := services.NewSearchEngineService(esClient, venueRpo)
 	eventDbConsumer := cdc.NewEventDbConsumer(cfg.Kafka.Listeners, searchEngineSvc)
 	eventDbConsumer.Start()
 

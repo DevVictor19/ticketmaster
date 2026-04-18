@@ -9,66 +9,65 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/DevVictor19/search/internal/entities"
+	"github.com/DevVictor19/search/internal/repositories"
 	"github.com/elastic/go-elasticsearch/v9"
 )
 
 const eventIndex = "events"
 
 type SearchEngineService interface {
-	UpsertEventIdx(event *entities.Event) error
+	UpsertEventIdx(doc *EventDoc) error
 	DeleteEventIdx(eventID uint) error
-	UpdateVenueIdx(venue *entities.Venue) error
+	UpdateEventLocationIdx(venueID uint, location string) error
 }
 
 type elasticsearchService struct {
-	client *elasticsearch.Client
+	client    *elasticsearch.Client
+	venueRepo repositories.VenueRepository
 }
 
-func NewSearchEngineService(client *elasticsearch.Client) SearchEngineService {
-	return &elasticsearchService{client: client}
+func NewSearchEngineService(
+	client *elasticsearch.Client,
+	venueRepo repositories.VenueRepository,
+) SearchEngineService {
+
+	return &elasticsearchService{
+		client:    client,
+		venueRepo: venueRepo,
+	}
 }
 
 type EventDoc struct {
-	ID            uint      `json:"event_id"`
-	UUID          string    `json:"event_uuid"`
-	Name          string    `json:"event_name"`
-	Description   *string   `json:"event_description,omitempty"`
-	Date          time.Time `json:"event_date"`
-	VenueID       uint      `json:"venue_id"`
-	VenueUUID     string    `json:"venue_uuid"`
-	VenueLocation string    `json:"venue_location"`
+	ID          uint      `json:"id"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description,omitempty"`
+	Date        time.Time `json:"date"`
+	VenueID     uint      `json:"venue_id"`
+	Location    string    `json:"location"`
 }
 
-func (s *elasticsearchService) UpsertEventIdx(event *entities.Event) error {
-	doc := EventDoc{
-		ID:          event.ID,
-		UUID:        event.UUID,
-		Name:        event.Name,
-		Description: event.Description,
-		Date:        event.Date,
-		VenueID:     event.VenueID,
-	}
+func (s *elasticsearchService) UpsertEventIdx(doc *EventDoc) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
-	if event.Venue != nil {
-		doc.VenueUUID = event.Venue.UUID
-		doc.VenueLocation = event.Venue.Location
+	venue, err := s.venueRepo.FindByID(ctx, doc.VenueID)
+	if err != nil {
+		return fmt.Errorf("failed to fetch venue for event: %w", err)
 	}
-
-	// TODO: populate VenueUUID and VenueLocation when Venue is nil (fetch from store)
+	doc.Location = venue.Location
 
 	body, err := json.Marshal(doc)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event document: %w", err)
 	}
 
-	docID := strconv.FormatUint(uint64(event.ID), 10)
+	docID := strconv.FormatUint(uint64(doc.ID), 10)
 
 	res, err := s.client.Index(
 		eventIndex,
 		bytes.NewReader(body),
 		s.client.Index.WithDocumentID(docID),
-		s.client.Index.WithContext(context.Background()),
+		s.client.Index.WithContext(ctx),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to index event: %w", err)
@@ -79,17 +78,20 @@ func (s *elasticsearchService) UpsertEventIdx(event *entities.Event) error {
 		return fmt.Errorf("elasticsearch index error: %s", res.String())
 	}
 
-	slog.Info("event indexed", "id", event.ID)
+	slog.Info("event indexed", "id", doc.ID)
 	return nil
 }
 
 func (s *elasticsearchService) DeleteEventIdx(eventID uint) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	docID := strconv.FormatUint(uint64(eventID), 10)
 
 	res, err := s.client.Delete(
 		eventIndex,
 		docID,
-		s.client.Delete.WithContext(context.Background()),
+		s.client.Delete.WithContext(ctx),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to delete event from index: %w", err)
@@ -104,19 +106,20 @@ func (s *elasticsearchService) DeleteEventIdx(eventID uint) error {
 	return nil
 }
 
-func (s *elasticsearchService) UpdateVenueIdx(venue *entities.Venue) error {
+func (s *elasticsearchService) UpdateEventLocationIdx(venueID uint, location string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	query := map[string]interface{}{
 		"script": map[string]interface{}{
-			"source": `ctx._source.venue_uuid = params.venue_uuid;
-						ctx._source.venue_location = params.venue_location;`,
+			"source": `ctx._source.location = params.location;`,
 			"params": map[string]interface{}{
-				"venue_uuid":     venue.UUID,
-				"venue_location": venue.Location,
+				"location": location,
 			},
 		},
 		"query": map[string]interface{}{
 			"term": map[string]interface{}{
-				"venue_id": venue.ID,
+				"venue_id": venueID,
 			},
 		},
 	}
@@ -129,10 +132,10 @@ func (s *elasticsearchService) UpdateVenueIdx(venue *entities.Venue) error {
 	res, err := s.client.UpdateByQuery(
 		[]string{eventIndex},
 		s.client.UpdateByQuery.WithBody(bytes.NewReader(body)),
-		s.client.UpdateByQuery.WithContext(context.Background()),
+		s.client.UpdateByQuery.WithContext(ctx),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update venue in index: %w", err)
+		return fmt.Errorf("failed to update events location: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -140,6 +143,6 @@ func (s *elasticsearchService) UpdateVenueIdx(venue *entities.Venue) error {
 		return fmt.Errorf("elasticsearch update_by_query error: %s", res.String())
 	}
 
-	slog.Info("venue updated in index", "id", venue.ID)
+	slog.Info("updated events location", "venue_id", venueID)
 	return nil
 }

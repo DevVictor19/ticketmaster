@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/DevVictor19/search/internal/entities"
 	"github.com/DevVictor19/search/internal/services"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
@@ -114,24 +113,19 @@ func (ec *EventDbConsumer) handleEventMsg(value []byte) {
 	}
 
 	operation := envelope.Payload.Op
-
 	if operation == CreateOp || operation == UpdateOp {
-		event := &entities.Event{
-			BaseEntity: entities.BaseEntity{
-				ID:        envelope.Payload.After.ID,
-				UUID:      envelope.Payload.After.UUID,
-				CreatedAt: envelope.Payload.After.CreatedAt,
-				UpdatedAt: envelope.Payload.After.UpdatedAt,
-			},
-			VenueID:     envelope.Payload.After.VenueID,
+		err = ec.searchEngineSvc.UpsertEventIdx(&services.EventDoc{
+			ID:          envelope.Payload.After.ID,
 			Name:        envelope.Payload.After.Name,
 			Description: envelope.Payload.After.Description,
 			Date:        envelope.Payload.After.Date,
-		}
-
-		err = ec.searchEngineSvc.UpsertEventIdx(event)
+			VenueID:     envelope.Payload.After.VenueID,
+		})
 		if err != nil {
-			slog.Error("error creating event index", "error", err, "event_id", event.ID)
+			slog.Error(
+				"error creating event index", "error", err, "event_id",
+				envelope.Payload.After.ID,
+			)
 		}
 		return
 	}
@@ -153,22 +147,16 @@ func (ec *EventDbConsumer) handleVenueMsg(value []byte) {
 	}
 
 	operation := envelope.Payload.Op
-
 	if operation == UpdateOp {
-		venue := &entities.Venue{
-			BaseEntity: entities.BaseEntity{
-				ID:        envelope.Payload.After.ID,
-				UUID:      envelope.Payload.After.UUID,
-				CreatedAt: envelope.Payload.After.CreatedAt,
-				UpdatedAt: envelope.Payload.After.UpdatedAt,
-			},
-			Location: envelope.Payload.After.Location,
-			SeatMap:  entities.SeatMap(envelope.Payload.After.SeatMap),
-		}
-
-		err = ec.searchEngineSvc.UpdateVenueIdx(venue)
+		err = ec.searchEngineSvc.UpdateEventLocationIdx(
+			envelope.Payload.After.ID,
+			envelope.Payload.After.Location,
+		)
 		if err != nil {
-			slog.Error("error updating venue index", "error", err, "venue_id", venue.ID)
+			slog.Error(
+				"error updating venue index", "error", err, "venue_id",
+				envelope.Payload.After.ID,
+			)
 		}
 	}
 }
