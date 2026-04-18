@@ -10,6 +10,16 @@ services:
       - "9200:9200"
     volumes:
       - es_data:/usr/share/elasticsearch/data
+  
+  kibana:
+    image: docker.elastic.co/kibana/kibana-wolfi:9.3.3
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
 
   broker:
     image: apache/kafka:4.0.2
@@ -147,6 +157,7 @@ services:
       SERVER_MAX_HEADER_BYTES: 1048576
       SERVER_CTX_TIMEOUT: 30
       KAFKA_LISTENERS: broker:29092
+      ELASTICSEARCH_ADDR: http://elasticsearch:9200
 
 volumes:
   db_data:

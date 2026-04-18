@@ -13,7 +13,7 @@ up:
 	docker compose up -d
 
 up-components:
-	docker compose up -d elasticsearch broker event-management-db redis connect
+	docker compose up -d elasticsearch kibana broker event-management-db redis connect
 
 down:
 	docker compose down
