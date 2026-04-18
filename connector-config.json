@@ -9,7 +9,7 @@
     "database.dbname": "event-management",
     "topic.prefix": "pg",
     "schema.include.list": "public",
-    "table.include.list": "public.event_performers,public.events,public.performers,public.tickets,public.venues",
+    "table.include.list": "public.events,public.venues",
     "publication.autocreate.mode": "all_tables",
     "include.schema.changes": "true",
     "plugin.name": "pgoutput"
