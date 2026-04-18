@@ -8,18 +8,25 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/DevVictor19/search/internal/entities"
+	"github.com/DevVictor19/search/internal/services"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
 type EventDbConsumer struct {
 	bootstrapServers string
 	shutdown         chan uint8
+	searchEngineSvc  services.SearchEngineService
 }
 
-func NewEventDbConsumer(bootstrapServers string) *EventDbConsumer {
+func NewEventDbConsumer(
+	bootstrapServers string,
+	searchEngineSvc services.SearchEngineService) *EventDbConsumer {
+
 	return &EventDbConsumer{
 		bootstrapServers: bootstrapServers,
 		shutdown:         make(chan uint8),
+		searchEngineSvc:  searchEngineSvc,
 	}
 }
 
@@ -91,46 +98,78 @@ func (ec *EventDbConsumer) processMessage(msg *kafka.Message) {
 
 	switch topic {
 	case eventTopic:
-		ec.handleEventPayload(msg.Value)
+		ec.handleEventMsg(msg.Value)
 	case venueTopic:
-		ec.handleVenuePayload(msg.Value)
+		ec.handleVenueMsg(msg.Value)
 	default:
 		slog.Warn("Unknown topic", "topic", topic)
 	}
 }
 
-func (ec *EventDbConsumer) handleEventPayload(value []byte) {
+func (ec *EventDbConsumer) handleEventMsg(value []byte) {
 	envelope, err := unmarshalEnvelope[Event](value)
 	if err != nil {
 		slog.Error("error unmarshaling event payload", "error", err)
 		return
 	}
 
-	switch envelope.Payload.Op {
-	case CreateOp:
-		fmt.Printf("New event created: %+v\n", envelope.Payload.After)
-	case UpdateOp:
-		fmt.Printf("Event updated from %+v to %+v\n", envelope.Payload.Before, envelope.Payload.After)
-	case DeleteOp:
-		fmt.Printf("Event deleted: %+v\n", envelope.Payload.Before)
+	operation := envelope.Payload.Op
+
+	if operation == CreateOp || operation == UpdateOp {
+		event := &entities.Event{
+			BaseEntity: entities.BaseEntity{
+				ID:        envelope.Payload.After.ID,
+				UUID:      envelope.Payload.After.UUID,
+				CreatedAt: envelope.Payload.After.CreatedAt,
+				UpdatedAt: envelope.Payload.After.UpdatedAt,
+			},
+			VenueID:     envelope.Payload.After.VenueID,
+			Name:        envelope.Payload.After.Name,
+			Description: envelope.Payload.After.Description,
+			Date:        envelope.Payload.After.Date,
+		}
+
+		err = ec.searchEngineSvc.UpsertEventIdx(event)
+		if err != nil {
+			slog.Error("error creating event index", "error", err, "event_id", event.ID)
+		}
+		return
 	}
 
+	if operation == DeleteOp {
+		err = ec.searchEngineSvc.DeleteEventIdx(envelope.Payload.Before.ID)
+		if err != nil {
+			slog.Error("error deleting event index", "error", err, "event_id", envelope.Payload.Before.ID)
+		}
+		return
+	}
 }
 
-func (ec *EventDbConsumer) handleVenuePayload(value []byte) {
+func (ec *EventDbConsumer) handleVenueMsg(value []byte) {
 	envelope, err := unmarshalEnvelope[Venue](value)
 	if err != nil {
 		slog.Error("error unmarshaling venue payload", "error", err)
 		return
 	}
 
-	switch envelope.Payload.Op {
-	case CreateOp:
-		fmt.Printf("New venue created: %+v\n", envelope.Payload.After)
-	case UpdateOp:
-		fmt.Printf("Venue updated from %+v to %+v\n", envelope.Payload.Before, envelope.Payload.After)
-	case DeleteOp:
-		fmt.Printf("Venue deleted: %+v\n", envelope.Payload.Before)
+	operation := envelope.Payload.Op
+
+	if operation == UpdateOp {
+		venue := &entities.Venue{
+			BaseEntity: entities.BaseEntity{
+				ID:        envelope.Payload.After.ID,
+				UUID:      envelope.Payload.After.UUID,
+				CreatedAt: envelope.Payload.After.CreatedAt,
+				UpdatedAt: envelope.Payload.After.UpdatedAt,
+			},
+			Location: envelope.Payload.After.Location,
+			SeatMap:  entities.SeatMap(envelope.Payload.After.SeatMap),
+		}
+
+		err = ec.searchEngineSvc.UpdateVenueIdx(venue)
+		if err != nil {
+			slog.Error("error updating venue index", "error", err, "venue_id", venue.ID)
+		}
 	}
 }
 

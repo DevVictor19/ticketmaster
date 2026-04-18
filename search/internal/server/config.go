@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Server *Server
-	Kafka  *Kafka
+	Server        *Server
+	Kafka         *Kafka
+	Elasticsearch *Elasticsearch
 }
 
 type Server struct {
@@ -25,6 +26,10 @@ type Kafka struct {
 	Listeners string
 }
 
+type Elasticsearch struct {
+	Addr string
+}
+
 func loadConfig() *Config {
 	return &Config{
 		Server: &Server{
@@ -37,6 +42,9 @@ func loadConfig() *Config {
 		},
 		Kafka: &Kafka{
 			Listeners: getString("KAFKA_LISTENERS"),
+		},
+		Elasticsearch: &Elasticsearch{
+			Addr: getString("ELASTICSEARCH_ADDR"),
 		},
 	}
 }
