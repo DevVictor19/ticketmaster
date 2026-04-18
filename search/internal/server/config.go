@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ type Config struct {
 	Server        *Server
 	Kafka         *Kafka
 	Elasticsearch *Elasticsearch
+	Postgres      *Postgres
 }
 
 type Server struct {
@@ -20,6 +22,25 @@ type Server struct {
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
 	CtxTimeout     time.Duration
+}
+
+type Postgres struct {
+	Host            string
+	User            string
+	Password        string
+	DBName          string
+	Port            string
+	SSLMode         string
+	TimeZone        string
+	MaxOpenConns    int
+	ConnMaxLifetime time.Duration
+	MaxIdleConns    int
+	ConnMaxIdleTime time.Duration
+}
+
+func (p *Postgres) DSN() string {
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
+		p.Host, p.User, p.Password, p.DBName, p.Port, p.SSLMode, p.TimeZone)
 }
 
 type Kafka struct {
@@ -45,6 +66,19 @@ func loadConfig() *Config {
 		},
 		Elasticsearch: &Elasticsearch{
 			Addr: getString("ELASTICSEARCH_ADDR"),
+		},
+		Postgres: &Postgres{
+			Host:            getString("POSTGRES_HOST"),
+			User:            getString("POSTGRES_USER"),
+			Password:        getString("POSTGRES_PASSWORD"),
+			DBName:          getString("POSTGRES_DBNAME"),
+			Port:            getString("POSTGRES_PORT"),
+			SSLMode:         getString("POSTGRES_SSLMODE"),
+			TimeZone:        getString("POSTGRES_TIMEZONE"),
+			MaxOpenConns:    getInt("POSTGRES_MAX_OPEN_CONNS"),
+			ConnMaxLifetime: time.Duration(getInt("POSTGRES_CONN_MAX_LIFETIME")) * time.Second,
+			MaxIdleConns:    getInt("POSTGRES_MAX_IDLE_CONNS"),
+			ConnMaxIdleTime: time.Duration(getInt("POSTGRES_CONN_MAX_IDLE_TIME")) * time.Second,
 		},
 	}
 }
