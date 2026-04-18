@@ -24,11 +24,8 @@ func NewEventDbConsumer(bootstrapServers string) *EventDbConsumer {
 }
 
 var (
-	ticketTopic         = "pg.public.tickets"
-	eventTopic          = "pg.public.events"
-	venueTopic          = "pg.public.venues"
-	performerTopic      = "pg.public.performers"
-	eventPerformerTopic = "pg.public.event_performers"
+	eventTopic = "pg.public.events"
+	venueTopic = "pg.public.venues"
 )
 
 func (ec *EventDbConsumer) Start() {
@@ -42,10 +39,7 @@ func (ec *EventDbConsumer) Start() {
 	}
 
 	err = c.SubscribeTopics([]string{
-		eventPerformerTopic,
 		eventTopic,
-		performerTopic,
-		ticketTopic,
 		venueTopic}, nil)
 	if err != nil {
 		log.Fatalf("Failed to subscribe consumer: %s", err)
@@ -65,7 +59,7 @@ func (ec *EventDbConsumer) Start() {
 			default:
 				msg, err := c.ReadMessage(time.Second)
 				if err == nil {
-					processMessage(msg)
+					ec.processMessage(msg)
 				} else if !err.(kafka.Error).IsTimeout() {
 					slog.Error("Consumer error", "error", err, "message", msg)
 				}
@@ -87,7 +81,7 @@ func (ec *EventDbConsumer) Stop(ctx context.Context) {
 	}
 }
 
-func processMessage(msg *kafka.Message) {
+func (ec *EventDbConsumer) processMessage(msg *kafka.Message) {
 	if msg.Value == nil {
 		slog.Debug("Tombstone event received, skipping", "topic", *msg.TopicPartition.Topic)
 		return
@@ -96,45 +90,49 @@ func processMessage(msg *kafka.Message) {
 	topic := *msg.TopicPartition.Topic
 
 	switch topic {
-	case ticketTopic:
-		handleTicketEvent(msg.Value)
 	case eventTopic:
-		handleEventEvent(msg.Value)
+		ec.handleEventPayload(msg.Value)
 	case venueTopic:
-		handleVenueEvent(msg.Value)
-	case performerTopic:
-		handlePerformerEvent(msg.Value)
-	case eventPerformerTopic:
-		handleEventPerformerEvent(msg.Value)
+		ec.handleVenuePayload(msg.Value)
 	default:
 		slog.Warn("Unknown topic", "topic", topic)
 	}
 }
 
-func handleTicketEvent(value []byte) {
-	envelope, err := unmarshalEnvelope[Ticket](value)
+func (ec *EventDbConsumer) handleEventPayload(value []byte) {
+	envelope, err := unmarshalEnvelope[Event](value)
 	if err != nil {
-		slog.Error("error unmarshaling ticket event", "error", err)
+		slog.Error("error unmarshaling event payload", "error", err)
 		return
 	}
 
 	switch envelope.Payload.Op {
-	case "c": // create
-		fmt.Printf("New ticket created: %+v\n", envelope.Payload.After)
-	case "u": // update
-		fmt.Printf("Ticket updated from %+v to %+v\n", envelope.Payload.Before, envelope.Payload.After)
-	case "d": // delete
-		fmt.Printf("Ticket deleted: %+v\n", envelope.Payload.Before)
+	case CreateOp:
+		fmt.Printf("New event created: %+v\n", envelope.Payload.After)
+	case UpdateOp:
+		fmt.Printf("Event updated from %+v to %+v\n", envelope.Payload.Before, envelope.Payload.After)
+	case DeleteOp:
+		fmt.Printf("Event deleted: %+v\n", envelope.Payload.Before)
 	}
+
 }
 
-func handleEventEvent(value []byte) {}
+func (ec *EventDbConsumer) handleVenuePayload(value []byte) {
+	envelope, err := unmarshalEnvelope[Venue](value)
+	if err != nil {
+		slog.Error("error unmarshaling venue payload", "error", err)
+		return
+	}
 
-func handleVenueEvent(value []byte) {}
-
-func handlePerformerEvent(value []byte) {}
-
-func handleEventPerformerEvent(value []byte) {}
+	switch envelope.Payload.Op {
+	case CreateOp:
+		fmt.Printf("New venue created: %+v\n", envelope.Payload.After)
+	case UpdateOp:
+		fmt.Printf("Venue updated from %+v to %+v\n", envelope.Payload.Before, envelope.Payload.After)
+	case DeleteOp:
+		fmt.Printf("Venue deleted: %+v\n", envelope.Payload.Before)
+	}
+}
 
 func unmarshalEnvelope[T any](value []byte) (*DebeziumEnvelope[T], error) {
 	var envelope DebeziumEnvelope[T]
@@ -142,6 +140,5 @@ func unmarshalEnvelope[T any](value []byte) (*DebeziumEnvelope[T], error) {
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling message: %w", err)
 	}
-
 	return &envelope, nil
 }

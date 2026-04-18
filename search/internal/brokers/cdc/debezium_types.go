@@ -10,11 +10,19 @@ type DebeziumPayload[T any] struct {
 	After       *T                   `json:"after"`
 	Source      DebeziumSource       `json:"source"`
 	Transaction *DebeziumTransaction `json:"transaction"`
-	Op          string               `json:"op"` // c=create, u=update, d=delete, r=read
+	Op          DebeziumOperation    `json:"op"` // c=create, u=update, d=delete, r=read
 	TsMs        int64                `json:"ts_ms"`
 	TsUs        int64                `json:"ts_us,omitempty"`
 	TsNs        int64                `json:"ts_ns,omitempty"`
 }
+
+type DebeziumOperation string
+
+var (
+	CreateOp DebeziumOperation = "c"
+	UpdateOp DebeziumOperation = "u"
+	DeleteOp DebeziumOperation = "d"
+)
 
 type DebeziumSource struct {
 	Version   string `json:"version"`
