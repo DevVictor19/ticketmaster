@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/DevVictor19/search/internal/brokers/cdc"
 	"github.com/labstack/echo/v5"
@@ -20,8 +21,8 @@ func Start() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	cdcConsumer := cdc.NewEventManagementDbConsumer(cfg.Kafka.Listeners)
-	cdcConsumer.Start(ctx)
+	eventDbConsumer := cdc.NewEventDbConsumer(cfg.Kafka.Listeners)
+	eventDbConsumer.Start()
 
 	e := echo.New()
 	e.Use(middleware.RequestLogger())
@@ -44,4 +45,8 @@ func Start() {
 	if err := sc.Start(ctx, e); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("failed to start server", "error", err)
 	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	eventDbConsumer.Stop(shutdownCtx)
 }

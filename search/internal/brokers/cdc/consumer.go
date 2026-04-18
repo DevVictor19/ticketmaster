@@ -11,13 +11,15 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
-type EventManagementDbConsumer struct {
-	BootstrapServers string
+type EventDbConsumer struct {
+	bootstrapServers string
+	shutdown         chan uint8
 }
 
-func NewEventManagementDbConsumer(bootstrapServers string) *EventManagementDbConsumer {
-	return &EventManagementDbConsumer{
-		BootstrapServers: bootstrapServers,
+func NewEventDbConsumer(bootstrapServers string) *EventDbConsumer {
+	return &EventDbConsumer{
+		bootstrapServers: bootstrapServers,
+		shutdown:         make(chan uint8),
 	}
 }
 
@@ -29,9 +31,9 @@ var (
 	eventPerformerTopic = "pg.public.event_performers"
 )
 
-func (ec *EventManagementDbConsumer) Start(ctx context.Context) {
+func (ec *EventDbConsumer) Start() {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": ec.BootstrapServers,
+		"bootstrap.servers": ec.bootstrapServers,
 		"group.id":          "search-api",
 		"auto.offset.reset": "earliest",
 	})
@@ -50,11 +52,16 @@ func (ec *EventManagementDbConsumer) Start(ctx context.Context) {
 	}
 
 	go func() {
-		for {
+		run := true
+		for run {
 			select {
-			case <-ctx.Done():
+			case <-ec.shutdown:
+				run = false
 				c.Close()
+				slog.Info("CDC consumer shutdown complete")
+				ec.shutdown <- 1
 				return
+
 			default:
 				msg, err := c.ReadMessage(time.Second)
 				if err == nil {
@@ -65,6 +72,19 @@ func (ec *EventManagementDbConsumer) Start(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+func (ec *EventDbConsumer) Stop(ctx context.Context) {
+	ec.shutdown <- 0
+	for {
+		select {
+		case <-ec.shutdown:
+			return
+		case <-ctx.Done():
+			slog.Warn("Timeout waiting for CDC consumer to shutdown")
+			return
+		}
+	}
 }
 
 func processMessage(msg *kafka.Message) {
