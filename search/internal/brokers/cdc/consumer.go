@@ -114,7 +114,10 @@ func (ec *EventDbConsumer) handleEventMsg(value []byte) {
 
 	operation := envelope.Payload.Op
 	if operation == CreateOp || operation == UpdateOp {
-		err = ec.searchEngineSvc.UpsertEventIdx(&services.EventDoc{
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		err = ec.searchEngineSvc.UpsertEventIdx(ctx, &services.EventDoc{
 			ID:          envelope.Payload.After.ID,
 			Name:        envelope.Payload.After.Name,
 			Description: envelope.Payload.After.Description,
@@ -131,7 +134,10 @@ func (ec *EventDbConsumer) handleEventMsg(value []byte) {
 	}
 
 	if operation == DeleteOp {
-		err = ec.searchEngineSvc.DeleteEventIdx(envelope.Payload.Before.ID)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		err = ec.searchEngineSvc.DeleteEventIdx(ctx, envelope.Payload.Before.ID)
 		if err != nil {
 			slog.Error("error deleting event index", "error", err, "event_id", envelope.Payload.Before.ID)
 		}
@@ -148,7 +154,11 @@ func (ec *EventDbConsumer) handleVenueMsg(value []byte) {
 
 	operation := envelope.Payload.Op
 	if operation == UpdateOp {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
 		err = ec.searchEngineSvc.UpdateEventLocationIdx(
+			ctx,
 			envelope.Payload.After.ID,
 			envelope.Payload.After.Location,
 		)

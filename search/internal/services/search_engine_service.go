@@ -16,10 +16,10 @@ import (
 const eventIndex = "events"
 
 type SearchEngineService interface {
-	UpsertEventIdx(doc *EventDoc) error
-	DeleteEventIdx(eventID uint) error
-	UpdateEventLocationIdx(venueID uint, location string) error
-	SearchEvents(req SearchEventsRequest) (*SearchEventsResponse, error)
+	UpsertEventIdx(ctx context.Context, doc *EventDoc) error
+	DeleteEventIdx(ctx context.Context, eventID uint) error
+	UpdateEventLocationIdx(ctx context.Context, venueID uint, location string) error
+	SearchEvents(ctx context.Context, req SearchEventsRequest) (*SearchEventsResponse, error)
 }
 
 type elasticsearchService struct {
@@ -60,10 +60,7 @@ type SearchEventsResponse struct {
 	Size   int
 }
 
-func (s *elasticsearchService) UpsertEventIdx(doc *EventDoc) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
+func (s *elasticsearchService) UpsertEventIdx(ctx context.Context, doc *EventDoc) error {
 	venue, err := s.venueRepo.FindByID(ctx, doc.VenueID)
 	if err != nil {
 		return fmt.Errorf("failed to fetch venue for event: %w", err)
@@ -96,10 +93,7 @@ func (s *elasticsearchService) UpsertEventIdx(doc *EventDoc) error {
 	return nil
 }
 
-func (s *elasticsearchService) DeleteEventIdx(eventID uint) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
+func (s *elasticsearchService) DeleteEventIdx(ctx context.Context, eventID uint) error {
 	docID := strconv.FormatUint(uint64(eventID), 10)
 
 	res, err := s.client.Delete(
@@ -120,10 +114,7 @@ func (s *elasticsearchService) DeleteEventIdx(eventID uint) error {
 	return nil
 }
 
-func (s *elasticsearchService) UpdateEventLocationIdx(venueID uint, location string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
+func (s *elasticsearchService) UpdateEventLocationIdx(ctx context.Context, venueID uint, location string) error {
 	query := map[string]interface{}{
 		"script": map[string]interface{}{
 			"source": `ctx._source.location = params.location;`,
@@ -161,10 +152,7 @@ func (s *elasticsearchService) UpdateEventLocationIdx(venueID uint, location str
 	return nil
 }
 
-func (s *elasticsearchService) SearchEvents(req SearchEventsRequest) (*SearchEventsResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
+func (s *elasticsearchService) SearchEvents(ctx context.Context, req SearchEventsRequest) (*SearchEventsResponse, error) {
 	if req.Size <= 0 {
 		req.Size = 10
 	}
