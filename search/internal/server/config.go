@@ -13,6 +13,7 @@ type Config struct {
 	Kafka         *Kafka
 	Elasticsearch *Elasticsearch
 	Postgres      *Postgres
+	Redis         *Redis
 }
 
 type Server struct {
@@ -51,6 +52,12 @@ type Elasticsearch struct {
 	Addr string
 }
 
+type Redis struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
 func loadConfig() *Config {
 	return &Config{
 		Server: &Server{
@@ -66,6 +73,11 @@ func loadConfig() *Config {
 		},
 		Elasticsearch: &Elasticsearch{
 			Addr: getString("ELASTICSEARCH_ADDR"),
+		},
+		Redis: &Redis{
+			Addr:     getString("REDIS_ADDR"),
+			Password: getString("REDIS_PASSWORD"),
+			DB:       getInt("REDIS_DB"),
 		},
 		Postgres: &Postgres{
 			Host:            getString("POSTGRES_HOST"),
