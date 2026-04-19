@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"github.com/DevVictor19/search/internal/brokers/cdc"
+	"github.com/DevVictor19/search/internal/handlers"
 	"github.com/DevVictor19/search/internal/repositories"
 	"github.com/DevVictor19/search/internal/services"
+	"github.com/DevVictor19/search/internal/usecases"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 )
@@ -30,13 +32,14 @@ func Start() {
 	eventDbConsumer := cdc.NewEventDbConsumer(cfg.Kafka.Listeners, searchEngineSvc)
 	eventDbConsumer.Start()
 
+	searchEventsUC := usecases.NewSearchEventsUC(searchEngineSvc)
+	eventsHandler := handlers.NewEventsHandler(searchEventsUC)
+
 	e := echo.New()
 	e.Use(middleware.RequestLogger())
 
 	api := e.Group("/api/v1/search")
-	api.GET("/health", func(c *echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
+	api.GET("/events", eventsHandler.SearchEvents)
 
 	sc := echo.StartConfig{
 		Address: cfg.Server.Addr,
