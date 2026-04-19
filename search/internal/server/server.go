@@ -23,16 +23,19 @@ func Start() {
 	cfg := loadConfig()
 	esClient := getEsClient(cfg.Elasticsearch)
 	db := connectDB(cfg.Postgres)
+	rdb := getRedisClient(cfg.Redis)
+	defer rdb.Close()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	venueRpo := repositories.NewVenueRepository(db)
 	searchEngineSvc := services.NewSearchEngineService(esClient, venueRpo)
+	searchCacheSvc := services.NewSearchCacheService(rdb)
 	eventDbConsumer := cdc.NewEventDbConsumer(cfg.Kafka.Listeners, searchEngineSvc)
 	eventDbConsumer.Start()
 
-	searchEventsUC := usecases.NewSearchEventsUC(searchEngineSvc)
+	searchEventsUC := usecases.NewSearchEventsUC(searchEngineSvc, searchCacheSvc)
 	eventsHandler := handlers.NewEventsHandler(searchEventsUC)
 
 	e := echo.New()
