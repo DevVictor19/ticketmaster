@@ -7,6 +7,7 @@ import (
 )
 
 type EventDocDTO struct {
+	UUID        string    `json:"uuid"`
 	Name        string    `json:"name"`
 	Description *string   `json:"description,omitempty"`
 	Date        time.Time `json:"date"`
@@ -24,6 +25,7 @@ func ToSearchEventsResponseDTO(res *services.SearchEventsResponse) *SearchEvents
 	events := make([]EventDocDTO, len(res.Events))
 	for i, e := range res.Events {
 		events[i] = EventDocDTO{
+			UUID:        e.UUID,
 			Name:        e.Name,
 			Description: e.Description,
 			Date:        e.Date,

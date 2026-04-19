@@ -119,6 +119,7 @@ func (ec *EventDbConsumer) handleEventMsg(value []byte) {
 
 		err = ec.searchEngineSvc.UpsertEventIdx(ctx, &services.EventDoc{
 			ID:          envelope.Payload.After.ID,
+			UUID:        envelope.Payload.After.UUID,
 			Name:        envelope.Payload.After.Name,
 			Description: envelope.Payload.After.Description,
 			Date:        envelope.Payload.After.Date,

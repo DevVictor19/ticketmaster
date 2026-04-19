@@ -40,6 +40,7 @@ func NewSearchEngineService(
 
 type EventDoc struct {
 	ID          uint      `json:"id"`
+	UUID        string    `json:"uuid"`
 	Name        string    `json:"name"`
 	Description *string   `json:"description,omitempty"`
 	Date        time.Time `json:"date"`
