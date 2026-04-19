@@ -19,6 +19,7 @@ type SearchEngineService interface {
 	UpsertEventIdx(doc *EventDoc) error
 	DeleteEventIdx(eventID uint) error
 	UpdateEventLocationIdx(venueID uint, location string) error
+	SearchEvents(req SearchEventsRequest) (*SearchEventsResponse, error)
 }
 
 type elasticsearchService struct {
@@ -44,6 +45,19 @@ type EventDoc struct {
 	Date        time.Time `json:"date"`
 	VenueID     uint      `json:"venue_id"`
 	Location    string    `json:"location"`
+}
+
+type SearchEventsRequest struct {
+	Query string
+	Page  int
+	Size  int
+}
+
+type SearchEventsResponse struct {
+	Events []EventDoc
+	Total  int
+	Page   int
+	Size   int
 }
 
 func (s *elasticsearchService) UpsertEventIdx(doc *EventDoc) error {
@@ -145,4 +159,98 @@ func (s *elasticsearchService) UpdateEventLocationIdx(venueID uint, location str
 
 	slog.Info("updated events location", "venue_id", venueID)
 	return nil
+}
+
+func (s *elasticsearchService) SearchEvents(req SearchEventsRequest) (*SearchEventsResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	if req.Size <= 0 {
+		req.Size = 10
+	}
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	from := (req.Page - 1) * req.Size
+
+	query := map[string]interface{}{
+		"from": from,
+		"size": req.Size,
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []interface{}{
+					map[string]interface{}{
+						"multi_match": map[string]interface{}{
+							"query":     req.Query,
+							"fields":    []string{"name^4", "description", "location^2"},
+							"fuzziness": "AUTO",
+						},
+					},
+				},
+				"filter": []interface{}{
+					map[string]interface{}{
+						"range": map[string]interface{}{
+							"date": map[string]interface{}{
+								"gte": "now",
+							},
+						},
+					},
+				},
+			},
+		},
+		"sort": []interface{}{
+			map[string]interface{}{
+				"_score": "desc",
+			},
+			map[string]interface{}{
+				"date": "asc",
+			},
+		},
+	}
+
+	body, err := json.Marshal(query)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := s.client.Search(
+		s.client.Search.WithContext(ctx),
+		s.client.Search.WithIndex(eventIndex),
+		s.client.Search.WithBody(bytes.NewReader(body)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return nil, fmt.Errorf("search error: %s", res.String())
+	}
+
+	var r struct {
+		Hits struct {
+			Total struct {
+				Value int `json:"value"`
+			} `json:"total"`
+			Hits []struct {
+				Source EventDoc `json:"_source"`
+			} `json:"hits"`
+		} `json:"hits"`
+	}
+
+	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	events := make([]EventDoc, 0, len(r.Hits.Hits))
+	for _, hit := range r.Hits.Hits {
+		events = append(events, hit.Source)
+	}
+
+	return &SearchEventsResponse{
+		Events: events,
+		Total:  r.Hits.Total.Value,
+		Page:   req.Page,
+		Size:   req.Size,
+	}, nil
 }
