@@ -55,7 +55,7 @@ type SearchEventsRequest struct {
 }
 
 type SearchEventsResponse struct {
-	Events []EventDoc
+	Events []*EventDoc
 	Total  int
 	Page   int
 	Size   int
@@ -153,7 +153,10 @@ func (s *elasticsearchService) UpdateEventLocationIdx(ctx context.Context, venue
 	return nil
 }
 
-func (s *elasticsearchService) SearchEvents(ctx context.Context, req SearchEventsRequest) (*SearchEventsResponse, error) {
+func (s *elasticsearchService) SearchEvents(
+	ctx context.Context,
+	req SearchEventsRequest) (*SearchEventsResponse, error) {
+
 	if req.Size <= 0 {
 		req.Size = 10
 	}
@@ -231,9 +234,9 @@ func (s *elasticsearchService) SearchEvents(ctx context.Context, req SearchEvent
 		return nil, err
 	}
 
-	events := make([]EventDoc, 0, len(r.Hits.Hits))
+	events := make([]*EventDoc, 0, len(r.Hits.Hits))
 	for _, hit := range r.Hits.Hits {
-		events = append(events, hit.Source)
+		events = append(events, &hit.Source)
 	}
 
 	return &SearchEventsResponse{

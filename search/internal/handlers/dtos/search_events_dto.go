@@ -15,16 +15,16 @@ type EventDocDTO struct {
 }
 
 type SearchEventsResponseDTO struct {
-	Events []EventDocDTO `json:"events"`
-	Total  int           `json:"total"`
-	Page   int           `json:"page"`
-	Size   int           `json:"size"`
+	Events []*EventDocDTO `json:"events"`
+	Total  int            `json:"total"`
+	Page   int            `json:"page"`
+	Size   int            `json:"size"`
 }
 
 func ToSearchEventsResponseDTO(res *services.SearchEventsResponse) *SearchEventsResponseDTO {
-	events := make([]EventDocDTO, len(res.Events))
+	events := make([]*EventDocDTO, len(res.Events))
 	for i, e := range res.Events {
-		events[i] = EventDocDTO{
+		events[i] = &EventDocDTO{
 			UUID:        e.UUID,
 			Name:        e.Name,
 			Description: e.Description,
