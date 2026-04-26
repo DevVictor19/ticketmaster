@@ -6,12 +6,6 @@ import (
 	"github.com/DevVictor19/search/internal/services"
 )
 
-type SearchEventsInput struct {
-	Query string
-	Page  int
-	Size  int
-}
-
 type SearchEventsUC struct {
 	searchEngineSvc services.SearchEngineService
 	searchCacheSvc  services.SearchCacheService
@@ -26,6 +20,12 @@ func NewSearchEventsUC(
 		searchEngineSvc: searchEngineSvc,
 		searchCacheSvc:  searchCacheSvc,
 	}
+}
+
+type SearchEventsInput struct {
+	Query string
+	Page  int
+	Size  int
 }
 
 func (uc *SearchEventsUC) Execute(ctx context.Context, input SearchEventsInput) (*services.SearchEventsResponse, error) {
